@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source $BANKING_JSON_API_ENVIRONMENT_FILE
+
+: "${ACCOUNTNUMBER?ACCOUNTNUMBER is required}"
+: "${BANKNUMBER?BANKNUMBER is required}"
+: "${PIN?PIN is required}"
+: "${SERVER?SERVER is required}"
+
+echo "PIN_${BANKNUMBER}_${ACCOUNTNUMBER} = \"${PIN}\"" > /tmp/pinfile
+
+set -xe
+
+aqhbci-tool4 --charset=utf-8 adduser -t pintan --context=1 -b $BANKNUMBER -u $ACCOUNTNUMBER -s $SERVER -N $ACCOUNTNUMBER
+aqhbci-tool4 --charset=utf-8 adduserflags -b $BANKNUMBER -u $ACCOUNTNUMBER -f forceSsl3
+yes 1 | aqhbci-tool4 getcert -c $ACCOUNTNUMBER
+aqhbci-tool4 -P /tmp/pinfile getsysid -c $ACCOUNTNUMBER
+aqhbci-tool4 -P /tmp/pinfile getaccounts -c $ACCOUNTNUMBER
+
+exec /usr/bin/python3 /app/app.py
